@@ -67,7 +67,6 @@
 ;; (the default) or `wget' or `curl'.
 ;;
 ;;; Code:
-
 
 (require 'cl-lib)
 (require 'async)
@@ -195,6 +194,15 @@ For example:
     (const :tag "Off" nil)
     (const :tag "Posframe" posframe)))
 
+(defcustom org-download-make-sub-directories-from-heading nil
+  "When non-nil make subdirectories based on heading title. You should set this to nil if you are using italics in your org title.
+For example:
+
+  * Hello/World
+
+Stores the image in the directory ./HelloWorld when this variable is non-nil."
+  :type 'boolean)
+
 (defvar org-download-posframe-show-params
   '(;; Please do not remove :timeout or set it to large.
     :timeout 1
@@ -256,6 +264,13 @@ Unless `org-download-heading-lvl' is nil, it's the name of the current
     (org-download-get-heading
      org-download-heading-lvl)))
 
+(defun org-download--santize-path (path)
+  "Replace forward slashes with empty strings in PATH when
+`org-download-make-sub-directories-from-heading' is not nil."
+  (if org-download-make-sub-directories-from-heading
+      (string-replace "/" "" path)
+    path))
+
 (defun org-download--dir ()
   "Return the directory path for image storage.
 
@@ -263,7 +278,7 @@ The path is composed from `org-download--dir-1' and `org-download--dir-2'.
 The directory is created if it didn't exist before."
   (if (org-download-org-mode-p)
       (let* ((part1 (org-download--dir-1))
-             (part2 (org-download--dir-2))
+             (part2 (org-download--santize-path (org-download--dir-2)))
              (dir (if part2
                       (expand-file-name part2 part1)
                     part1)))
